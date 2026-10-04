@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paramètres - SpeakNex</title>
+  <style>
+    :root {
+      --bg-primary: #1a1a2e;
+      --bg-secondary: #16213e;
+      --bg-tertiary: #0f3460;
+      --bg-input: #1a1a2e;
+      --border-color: #2a2a4e;
+      --text-primary: #e0e0e0;
+      --text-secondary: #a0a0b0;
+      --text-muted: #6a6a7a;
+      --accent-primary: #4a9eff;
+      --accent-secondary: #2d6db5;
+      --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: var(--font-family);
+      font-size: 13px;
+      color: var(--text-primary);
+      background: var(--bg-primary);
+      display: flex;
+      height: 100vh;
+    }
+    
+    /* Sidebar */
+    .settings-sidebar {
+      width: 180px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      padding: 10px 0;
+      flex-shrink: 0;
+    }
+    
+    .settings-sidebar h3 {
+      padding: 8px 15px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 5px;
+    }
+    
+    .settings-nav-item {
+      padding: 8px 15px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .settings-nav-item:hover {
+      background: var(--bg-hover, #2a2a4e);
+      color: var(--text-primary);
+    }
+    
+    .settings-nav-item.active {
+      background: var(--bg-tertiary);
+      color: var(--accent-primary);
+    }
+    
+    /* Content */
+    .settings-content {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    
+    .settings-panel {
+      display: none;
+    }
+    
+    .settings-panel.active {
+      display: block;
+    }
+    
+    .settings-panel h2 {
+      font-size: 16px;
+      margin-bottom: 20px;
+      color: var(--text-primary);
+    }
+    
+    .setting-group {
+      margin-bottom: 20px;
+    }
+    
+    .setting-group h4 {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+    
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .setting-row label {
+      color: var(--text-primary);
+      font-size: 13px;
+    }
+    
+    .setting-row .description {
+      color: var(--text-muted);
+      font-size: 11px;
+      margin-top: 2px;
+    }
+    
+    .setting-row select,
+    .setting-row input[type="text"],
+    .setting-row input[type="number"] {
+      background: var(--bg-input);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 5px 8px;
+      font-size: 12px;
+      font-family: var(--font-family);
+      min-width: 200px;
+    }
+    
+    .setting-row input[type="range"] {
+      width: 150px;
+      accent-color: var(--accent-primary);
+    }
+    
+    .setting-row input[type="checkbox"] {
+      accent-color: var(--accent-primary);
+      width: 16px;
+      height: 16px;
+    }
+    
+    .setting-row .value-display {
+      color: var(--accent-primary);
+      font-size: 12px;
+      min-width: 30px;
+      text-align: right;
+    }
+    
+    /* Buttons */
+    .settings-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: var(--font-family);
+    }
+    
+    .btn-primary {
+      background: var(--accent-primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: var(--accent-secondary);
+    }
+    
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+    
+    .btn-secondary:hover {
+      background: var(--border-color);
+    }
+  </style>
+</head>
+<body>
+  <div class="settings-sidebar">
+    <h3>Paramètres</h3>
+    <div class="settings-nav-item active" data-panel="audio">🎵 Audio</div>
+    <div class="settings-nav-item" data-panel="microphone">🎤 Microphone</div>
+    <div class="settings-nav-item" data-panel="speakers">🔊 Haut-parleurs</div>
+    <div class="settings-nav-item" data-panel="interface">🖥️ Interface</div>
+    <div class="settings-nav-item" data-panel="connection">🔗 Connexion</div>
+    <div class="settings-nav-item" data-panel="notifications">🔔 Notifications</div>
+    <div class="settings-nav-item" data-panel="general">⚙️ Général</div>
+  </div>
+  
+  <div class="settings-content">
+    <!-- Audio Panel -->
+    <div class="settings-panel active" id="panel-audio">
+      <h2>Audio</h2>
+      <div class="setting-group">
+        <h4>Qualité audio</h4>
+        <div class="setting-row">
+          <div>
+            <label>Qualité vocale</label>
+            <div class="description">Qualité de l'audio envoyé aux autres utilisateurs</div>
+          </div>
+          <select id="audio-quality">
+            <option value="low">Basse (économise la bande passante)</option>
+            <option value="normal" selected>Normale</option>
+            <option value="high">Haute</option>
+          </select>
+        </div>
+      </div>
+      <div class="setting-group">
+        <h4>Réglages généraux</h4>
+        <div class="setting-row">
+          <div>
+            <label>Activité vocale</label>
+            <div class="description">Détecter automatiquement quand vous parlez</div>
+          </div>
+          <input type="checkbox" id="voice-activation" checked>
+        </div>
+        <div class="setting-row">
+          <div>
+            <label>Seuil de détection</label>
+            <div class="description">Sensibilité de la détection vocale</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <input type="range" id="voice-threshold" min="0" max="100" value="50">
+            <span class="value-display" id="voice-threshold-value">50</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Microphone Panel -->
+    <div class="settings-panel" id="panel-microphone">
+      <h2>Microphone</h2>
+      <div class="setting-group">
+        <h4>Périphérique</h4>
+        <div class="setting-row">
+          <div>
+            <label>Microphone</label>
+            <div class="description">Périphérique d'entrée audio</div>
+          </div>
+          <select id="mic-device">
+            <option value="">Microphone par défaut</option>
+          </select>
+        </div>
+      </div>
+      <div class="setting-group">
+        <h4>Volume</h4>
+        <div class="setting-row">
+          <div>
+            <label>Volume du microphone</label>
+            <div class="description">Gain du microphone</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <input type="range" id="mic-volume" min="0" max="100" value="100">
+            <span class="value-display" id="mic-volume-value">100%</span>
+          </div>
+        </div>
+      </div>
+      <div class="setting-group">
+        <h4>Mode d'activation</h4>
+        <div class="setting-row">
+          <div>
+            <label>Parler en appuyant sur une touche</label>
+            <div class="description">Activer le microphone uniquement quand la touche est enfoncée</div>
+          </div>
+          <input type="checkbox" id="push-to-talk">
+        </div>
+        <div class="setting-row">
+          <div>
+            <label>Touche PTT</label>
+            <div class="description">Touche pour activer le microphone</div>
+          </div>
+          <input type="text" id="ptt-key" value="ESPACE" style="width: 100px;">
+        </div>
+      </div>
+      <div class="settings-actions">
+        <button class="btn btn-secondary" id="test-mic-btn">Tester le microphone</button>
+        <button class="btn btn-primary" id="save-mic-btn">Sauvegarder</button>
+      </div>
+    </div>
+    
+    <!-- Speakers Panel -->
+    <div class="settings-panel" id="panel-speakers">
+      <h2>Haut-parleurs / Casque</h2>
+      <div class="setting-group">
+        <h4>Périphérique</h4>
+        <div class="setting-row">
+          <div>
+            <label>Haut-parleurs</label>
+            <div class="description">Périphérique de sortie audio</div>
+          </div>
+          <select id="speaker-device">
+            <option value="">Haut-parleurs par défaut</option>
+          </select>
+        </div>
+      </div>
+      <div class="setting-group">
+        <h4>Volume</h4>
+        <div class="setting-row">
+          <div>
+            <label>Volume global</label>
+            <div class="description">Volume des voix des autres utilisateurs</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <input type="range" id="speaker-volume" min="0" max="100" value="100">
+            <span class="value-display" id="speaker-volume-value">100%</span>
+          </div>
+        </div>
+      </div>
+      <div class="settings-actions">
+        <button class="btn btn-secondary" id="test-speaker-btn">Tester les haut-parleurs</button>
+        <button class="btn btn-primary" id="save-speaker-btn">Sauvegarder</button>
+      </div>
+    </div>
+    
+    <!-- Interface Panel -->
+    <div class="settings-panel" id="panel-interface">
+      <h2>Interface</h2>
+      <div class="setting-group">
+        <h4>Apparence</h4>
+        <div class="setting-row">
+          <div>
+            <label>Thème</label>
+          </div>
+          <select id="theme-select">
+            <option value="dark" selected>Sombre</option>
+            <option value="light">Clair</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <div>
+            <label>Langue</label>
+          </div>
+          <select id="language-select">
+            <option value="fr" selected>Français</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+      </div>
+      <div class="settings-actions">
+        <button class="btn btn-primary" id="save-interface-btn">Sauvegarder</button>
+      </div>
+    </div>
+    
+    <!-- Connection Panel -->
+    <div class="settings-panel" id="panel-connection">
+      <h2>Connexion</h2>
+      <div class="setting-group">
+        <h4>Connexion automatique</h4>
+        <div class="setting-row">
+          <div>
+            <label>Se reconnecter automatiquement au démarrage</label>
+          </div>
+          <input type="checkbox" id="auto-connect">
+        </div>
+        <div class="setting-row">
+          <div>
+            <label>Serveur par défaut</label>
+          </div>
+          <input type="text" id="default-server" placeholder="192.168.1.50:30000">
+        </div>
+      </div>
+      <div class="settings-actions">
+        <button class="btn btn-primary" id="save-connection-btn">Sauvegarder</button>
+      </div>
+    </div>
+    
+    <!-- Notifications Panel -->
+    <div class="settings-panel" id="panel-notifications">
+      <h2>Notifications</h2>
+      <div class="setting-group">
+        <h4>Alertes</h4>
+        <div class="setting-row">
+          <div>
+            <label>Activer les notifications</label>
+          </div>
+          <input type="checkbox" id="enable-notifications" checked>
+        </div>
+        <div class="setting-row">
+          <div>
+            <label>Sons de notification</label>
+          </div>
+          <input type="checkbox" id="notification-sound" checked>
+        </div>
+        <div class="setting-row">
+          <div>
+            <label>Notifier quand quelqu'un parle</label>
+          </div>
+          <input type="checkbox" id="notify-speaking">
+        </div>
+      </div>
+      <div class="settings-actions">
+        <button class="btn btn-primary" id="save-notifications-btn">Sauvegarder</button>
+      </div>
+    </div>
+    
+    <!-- General Panel -->
+    <div class="settings-panel" id="panel-general">
+      <h2>Général</h2>
+      <div class="setting-group">
+        <h4>Informations</h4>
+        <div class="setting-row">
+          <div>
+            <label>Version</label>
+          </div>
+          <span>26.0</span>
+        </div>
+        <div class="setting-row">
+          <div>
+            <label>SpeakNex Client 1</label>
+          </div>
+          <span>SN1</span>
+        </div>
+      </div>
+      <div class="settings-actions">
+        <button class="btn btn-primary" id="save-general-btn">Fermer</button>
+      </div>
+    </div>
+  </div>
+  
+  <script src="settings-renderer.js"></script>
+</body>
+</html>

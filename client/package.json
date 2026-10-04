@@ -1,0 +1,16 @@
+{
+  "name": "speaknex-client",
+  "version": "26.0.0",
+  "description": "SN1 - SpeakNex Client 1",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "cross-env NODE_ENV=development electron ."
+  },
+  "devDependencies": {
+    "electron": "^28.3.3"
+  },
+  "allowScripts": {
+    "electron@28.3.3": true
+  }
+}

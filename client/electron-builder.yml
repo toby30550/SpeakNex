@@ -1,0 +1,68 @@
+appId: com.speaknex.sn1
+productName: SN1 - SpeakNex Client 1
+copyright: Copyright © 2024 SpeakNex
+
+directories:
+  output: ../dist/client
+  buildResources: ../
+
+files:
+  - package.json
+  - main.js
+  - preload.js
+  - index.html
+  - connect.html
+  - connect-renderer.js
+  - settings.html
+  - settings-renderer.js
+  - privilege-key.html
+  - privilege-key-renderer.js
+  - renderer.js
+
+extraFiles:
+  - from: ../logo.png
+    to: logo.png
+    filter:
+      - logo.png
+
+win:
+  # icon: ../logo.ico  # Use logo.ico when available
+  target:
+    - target: nsis
+      arch:
+        - x64
+        - ia32
+
+nsis:
+  oneClick: false
+  perMachine: true
+  allowToChangeInstallationDirectory: true
+  allowElevation: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: SN1 - SpeakNex Client 1
+  # installerIcon: ../logo.ico  # Use when logo.ico is available
+  # uninstallerIcon: ../logo.ico
+  # installerHeaderIcon: ../logo.ico
+  include: installer.nsh
+  license: ../LICENSE
+  artifactName: ${productName}-Setup-${version}.${ext}
+
+mac:
+  icon: ../logo.png
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+
+linux:
+  icon: ../logo.png
+  category: Network
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64

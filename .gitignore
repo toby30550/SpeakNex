@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build output
+dist/
+build/
+out/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+
+# Server data
+server/data/
+data/
+
+# Electron
+electron-builder/
+
+# Temporary
+tmp/
+temp/
+
+# Package locks (keep root, ignore nested)
+*/package-lock.json
+!package-lock.json

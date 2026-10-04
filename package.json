@@ -1,0 +1,34 @@
+{
+  "name": "speaknex",
+  "version": "26.0.0",
+  "description": "SpeakNex - Voice Communication Software",
+  "private": true,
+  "scripts": {
+    "server": "node server/server.js",
+    "server:dev": "node server/server.js --dev",
+    "client": "electron client/",
+    "client:dev": "cross-env NODE_ENV=development electron client/",
+    "build:client": "electron-builder --win --config client/electron-builder.yml",
+    "build:client:setup": "electron-builder --win nsis --config client/electron-builder.yml",
+    "build:server:win": "node scripts/build-server-win.js",
+    "build:server:linux": "node scripts/build-server-linux.js",
+    "build:all": "npm run build:client:setup && npm run build:server:win && npm run build:server:linux",
+    "release": "node scripts/release.js",
+    "lint": "eslint client/ server/",
+    "test": "node --test server/test/"
+  },
+  "devDependencies": {
+    "electron": "^28.2.0",
+    "electron-builder": "^24.9.1",
+    "cross-env": "^7.0.3",
+    "eslint": "^8.56.0"
+  },
+  "dependencies": {
+    "ws": "^8.16.0",
+    "commander": "^12.0.0",
+    "speakeasy": "^2.0.0"
+  },
+  "allowScripts": {
+    "electron@28.3.3": true
+  }
+}

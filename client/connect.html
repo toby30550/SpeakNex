@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Se connecter - SpeakNex</title>
+  <style>
+    :root {
+      --bg-primary: #1a1a2e;
+      --bg-secondary: #16213e;
+      --bg-tertiary: #0f3460;
+      --bg-input: #1a1a2e;
+      --border-color: #2a2a4e;
+      --text-primary: #e0e0e0;
+      --text-secondary: #a0a0b0;
+      --text-muted: #6a6a7a;
+      --accent-primary: #4a9eff;
+      --accent-secondary: #2d6db5;
+      --accent-danger: #f44336;
+      --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: var(--font-family);
+      font-size: 13px;
+      color: var(--text-primary);
+      background: var(--bg-primary);
+      padding: 20px;
+    }
+    
+    .connect-dialog {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    
+    .connect-dialog h2 {
+      font-size: 16px;
+      margin-bottom: 20px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .connect-dialog h2 .icon {
+      font-size: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 8px 10px;
+      background: var(--bg-input);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: var(--font-family);
+      outline: none;
+    }
+    
+    .form-group input:focus {
+      border-color: var(--accent-primary);
+    }
+    
+    .form-group input::placeholder {
+      color: var(--text-muted);
+    }
+    
+    .form-group .hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+    
+    .form-row {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .form-row .form-group {
+      flex: 1;
+    }
+    
+    .form-row .form-group.port-group {
+      flex: 0 0 100px;
+    }
+    
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+    
+    .checkbox-group input[type="checkbox"] {
+      accent-color: var(--accent-primary);
+    }
+    
+    .checkbox-group label {
+      color: var(--text-secondary);
+      font-size: 12px;
+      cursor: pointer;
+    }
+    
+    .button-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    .btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: var(--font-family);
+    }
+    
+    .btn-primary {
+      background: var(--accent-primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: var(--accent-secondary);
+    }
+    
+    .btn-primary:disabled {
+      background: var(--text-muted);
+      cursor: not-allowed;
+    }
+    
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+    
+    .btn-secondary:hover {
+      background: var(--border-color);
+    }
+    
+    .error-message {
+      color: var(--accent-danger);
+      font-size: 12px;
+      margin-top: 10px;
+      display: none;
+    }
+    
+    .connecting-indicator {
+      display: none;
+      text-align: center;
+      padding: 10px;
+      color: var(--accent-primary);
+    }
+    
+    .connecting-indicator .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border-color);
+      border-top-color: var(--accent-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .nickname-group {
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="connect-dialog">
+    <h2><span class="icon">🔗</span> Se connecter à un serveur</h2>
+    
+    <div class="form-group">
+      <label for="nickname">Pseudo</label>
+      <input type="text" id="nickname" placeholder="Votre pseudo..." maxlength="30">
+      <div class="hint">Choisissez un pseudo pour identifier vous sur le serveur</div>
+    </div>
+    
+    <div class="form-group">
+      <label for="server-address">Adresse du serveur</label>
+      <div class="form-row">
+        <input type="text" id="server-address" placeholder="192.168.1.50 ou monserveur.example">
+        <div class="form-group port-group">
+          <input type="text" id="server-port" placeholder="30000" value="30000">
+        </div>
+      </div>
+      <div class="hint">Adresse IP ou nom de domaine du serveur SpeakNex</div>
+    </div>
+    
+    <div class="form-group">
+      <label for="server-password">Mot de passe (optionnel)</label>
+      <input type="password" id="server-password" placeholder="Mot de passe du serveur">
+      <div class="hint">Laissez vide si le serveur n'a pas de mot de passe</div>
+    </div>
+    
+    <div class="checkbox-group">
+      <input type="checkbox" id="remember-server">
+      <label for="remember-server">Mémoriser ce serveur</label>
+    </div>
+    
+    <div class="connecting-indicator" id="connecting-indicator">
+      <span class="spinner"></span>
+      Connexion en cours...
+    </div>
+    
+    <div class="error-message" id="error-message"></div>
+    
+    <div class="button-row">
+      <button class="btn btn-secondary" id="cancel-btn">Annuler</button>
+      <button class="btn btn-primary" id="connect-btn">Se connecter</button>
+    </div>
+  </div>
+  
+  <script src="connect-renderer.js"></script>
+</body>
+</html>

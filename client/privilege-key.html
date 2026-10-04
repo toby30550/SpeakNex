@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clé de privilèges - SpeakNex</title>
+  <style>
+    :root {
+      --bg-primary: #1a1a2e;
+      --bg-secondary: #16213e;
+      --bg-tertiary: #0f3460;
+      --bg-input: #1a1a2e;
+      --border-color: #2a2a4e;
+      --text-primary: #e0e0e0;
+      --text-secondary: #a0a0b0;
+      --text-muted: #6a6a7a;
+      --accent-primary: #4a9eff;
+      --accent-secondary: #2d6db5;
+      --accent-success: #4caf50;
+      --accent-danger: #f44336;
+      --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: var(--font-family);
+      font-size: 13px;
+      color: var(--text-primary);
+      background: var(--bg-primary);
+      padding: 20px;
+    }
+    
+    .privilege-dialog {
+      max-width: 350px;
+      margin: 0 auto;
+    }
+    
+    .privilege-dialog h2 {
+      font-size: 16px;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .privilege-dialog .description {
+      color: var(--text-secondary);
+      font-size: 12px;
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 8px 10px;
+      background: var(--bg-input);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      outline: none;
+    }
+    
+    .form-group input:focus {
+      border-color: var(--accent-primary);
+    }
+    
+    .result-message {
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 10px;
+      font-size: 12px;
+      display: none;
+    }
+    
+    .result-message.success {
+      display: block;
+      background: rgba(76, 175, 80, 0.2);
+      border: 1px solid var(--accent-success);
+      color: var(--accent-success);
+    }
+    
+    .result-message.error {
+      display: block;
+      background: rgba(244, 67, 54, 0.2);
+      border: 1px solid var(--accent-danger);
+      color: var(--accent-danger);
+    }
+    
+    .button-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    .btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: var(--font-family);
+    }
+    
+    .btn-primary {
+      background: var(--accent-primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: var(--accent-secondary);
+    }
+    
+    .btn-primary:disabled {
+      background: var(--text-muted);
+      cursor: not-allowed;
+    }
+    
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+    
+    .btn-secondary:hover {
+      background: var(--border-color);
+    }
+  </style>
+</head>
+<body>
+  <div class="privilege-dialog">
+    <h2>🔑 Clé de privilèges</h2>
+    <p class="description">
+      Entrez la clé de privilèges fournie par l'administrateur du serveur pour obtenir des permissions supplémentaires.
+    </p>
+    
+    <div class="form-group">
+      <label for="privilege-key">Clé de privilèges</label>
+      <input type="text" id="privilege-key" placeholder="ABCDEFGH12345678" maxlength="16" autocomplete="off">
+    </div>
+    
+    <div class="result-message" id="result-message"></div>
+    
+    <div class="button-row">
+      <button class="btn btn-secondary" id="cancel-btn">Annuler</button>
+      <button class="btn btn-primary" id="submit-btn">Valider</button>
+    </div>
+  </div>
+  
+  <script src="privilege-key-renderer.js"></script>
+</body>
+</html>
