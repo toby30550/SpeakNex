@@ -1,218 +1,209 @@
 ; ============================================================
-; SpeakNex Server Installer for Windows
-; NSIS Installer Script
+; SN1-Server - SpeakNex Server Windows Installer
+; Compiled with NSIS
 ; ============================================================
 
 !include "MUI2.nsh"
 !include "LogicLib.nsh"
 
-; General
 Name "SN1-Server - SpeakNex Server"
 OutFile "SN1-Server-Setup.exe"
-Caption "Installation de SpeakNex Server"
-VIProductVersion "26.0.0.0"
-VIAddVersionKey "ProductName" "SN1-Server - SpeakNex Server"
-VIAddVersionKey "FileDescription" "SpeakNex Voice Communication Server"
-VIAddVersionKey "CompanyName" "SpeakNex"
-VIAddVersionKey "LegalCopyright" "Copyright © 2024 SpeakNex"
-
-; Install directory
 InstallDir "$PROGRAMFILES64\SpeakNex\Server"
 InstallDirRegKey HKLM "Software\SpeakNex\Server" "InstallDir"
-
-; Request administrator privileges
 RequestExecutionLevel admin
+
+; Version info
+VIProductVersion "26.0.0.0"
+VIAddVersionKey /LANG=0 "ProductName" "SN1-Server - SpeakNex Server"
+VIAddVersionKey /LANG=0 "FileDescription" "SpeakNex Voice Communication Server"
+VIAddVersionKey /LANG=0 "CompanyName" "SpeakNex"
+VIAddVersionKey /LANG=0 "FileVersion" "26.0.0"
+VIAddVersionKey /LANG=0 "ProductVersion" "26.0"
+VIAddVersionKey /LANG=0 "LegalCopyright" "Copyright (C) 2024 SpeakNex"
 
 ; Modern UI
 !define MUI_ABORTWARNING
-!define MUI_ICON "..\logo.png"
-!define MUI_UNICON "..\logo.png"
-!define MUI_HEADER_ICON "..\logo.png"
+!define MUI_ICON "logo.ico"
+!define MUI_UNICON "logo.ico"
 
 ; Pages
-!insertmacro MUI_PAGE_LICENSE "..\LICENSE"
+!insertmacro MUI_PAGE_LICENSE "license.txt"
 !insertmacro MUI_PAGE_DIRECTORY
 
-; Port configuration page
-!define MUI_PAGE_CUSTOMFUNCTION_PRE portPagePre
-!insertmacro MUI_PAGE_CUSTOM
+; Custom port + service page
+Page custom PortPage PortPageLeave
 
-; Components page
 !insertmacro MUI_PAGE_COMPONENTS
-
 !insertmacro MUI_PAGE_INSTFILES
-
-; Finish page
-!define MUI_FINISHPAGE_RUN "$INSTDIR\SN1-Server.bat"
-!define MUI_FINISHPAGE_RUN_TEXT "Démarrer SpeakNex Server"
 !insertmacro MUI_PAGE_FINISH
 
-; Uninstall pages
 !insertmacro MUI_UNPAGE_CONFIRM
 !insertmacro MUI_UNPAGE_INSTFILES
+!insertmacro MUI_UNPAGE_FINISH
 
-; Languages
 !insertmacro MUI_LANGUAGE "French"
 !insertmacro MUI_LANGUAGE "English"
 
-; Variables
-Var Port
-Var CreateDesktopShortcut
-Var StartWithWindows
+Var PortVar
+Var ServiceVar
 
 ; ============================================================
-; Port Configuration Page
+; Port configuration page
 ; ============================================================
 
-!define PORT_PAGE_TEXT "Configuration du serveur"
-
-Function portPagePre
-  ; Default port
-  StrCpy $Port "30000"
-FunctionEnd
-
-Page custom showPortPage leavePortPage
-
-Function showPortPage
+Function PortPage
   nsDialogs::Create 1018
   Pop $0
-  
-  ${NSD_CreateLabel} 0 10u 100% 15u "Port du serveur SpeakNex"
+
+  ${NSD_CreateLabel} 0 10u 100% 14u "Port du serveur SpeakNex (par defaut : 30000)"
   Pop $0
-  
-  ${NSD_CreateText} 0 30u 100% 15u $Port
+
+  ${NSD_CreateText} 0 30u 60u 15u "30000"
+  Pop $PortVar
+
+  ${NSD_CreateLabel} 0 55u 100% 24u "Si le port est deja utilise par un autre programme, le serveur ne pourra pas demarrer."
   Pop $0
-  ${NSD_OnChange} $0 updatePort
-  
-  ${NSD_CreateLabel} 0 55u 100% 15u "Port par défaut: 30000 (laissez vide pour utiliser le port par défaut)"
+
+  ${NSD_CreateLabel} 0 85u 100% 14u "Service Windows :"
   Pop $0
-  
-  ${NSD_CreateCheckbox} 0 80u 100% 15u "Créer un raccourci sur le bureau"
-  Pop $CreateDesktopShortcut
-  ${NSD_Check} $CreateDesktopShortcut
-  
-  ${NSD_CreateCheckbox} 0 100u 100% 15u "Démarrer le serveur avec Windows"
-  Pop $StartWithWindows
-  ${NSD_Uncheck} $StartWithWindows
-  
+
+  ${NSD_CreateCheckBox} 0 105u 100% 14u "Installer SN1-Server comme service Windows (demarrage automatique)"
+  Pop $ServiceVar
+  ${NSD_Uncheck} $ServiceVar
+
   nsDialogs::Show
 FunctionEnd
 
-Function leavePortPage
-  ${NSD_GetText} $0 $Port
-FunctionEnd
-
-Function updatePort
-  ${NSD_GetText} $0 $Port
+Function PortPageLeave
+  ${NSD_GetText} $PortVar $0
+  ${If} $0 == ""
+    StrCpy $0 "30000"
+  ${EndIf}
 FunctionEnd
 
 ; ============================================================
 ; Sections
 ; ============================================================
 
-!insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-  !insertmacro MUI_DESCRIPTION_TEXT ${SecMain} "SpeakNex Server - Le serveur de communication vocale"
-  !insertmacro MUI_DESCRIPTION_TEXT ${SecDocumentation} "Documentation et fichiers de configuration"
-!insertmacro MUI_FUNCTION_DESCRIPTION_END
-
-Section "SN1-Server (requis)" SecMain
+Section "SN1-Server (requis)" SecServer
   SectionIn RO
-  
+
   SetOutPath "$INSTDIR"
-  
-  ; Copy main files
+
+  ; Main files
   File "server.js"
   File "package.json"
   File "SN1-Server.bat"
   File "SN1-Server.js"
+  File "service.js"
   File "logo.png"
-  
-  ; Copy node_modules
-  SetOutPath "$INSTDIR\node_modules"
-  File /r "node_modules\*"
-  
-  ; Create data directory
+  File "README.md"
+  File /r "node_modules"
+
+  ; Data directory
   CreateDirectory "$INSTDIR\data"
-  
-  ; Create configuration file
-  SetOutPath "$INSTDIR\data"
-  FileOpen $0 "$INSTDIR\data\config.json" w
-  FileWrite $0 "{\n"
-  FileWrite $0 "  \"port\": ${Port},\n"
-  FileWrite $0 "  \"serverName\": \"SpeakNex Server\",\n"
-  FileWrite $0 "  \"maxClients\": 50\n"
-  FileWrite $0 "}\n"
-  FileClose $0
-  
-  ; Create desktop shortcut
-  ${If} $CreateDesktopShortcut == ${BST_CHECKED}
-    CreateShortcut "$DESKTOP\SN1-Server.lnk" "$INSTDIR\SN1-Server.bat"
-  ${EndIf}
-  
-  ; Create start menu shortcuts
+
+  ; Write configuration with chosen port
+  Call WriteConfig
+
+  ; Shortcuts
   CreateDirectory "$SMPROGRAMS\SpeakNex\Server"
-  CreateShortcut "$SMPROGRAMS\SpeakNex\Server\SN1-Server.lnk" "$INSTDIR\SN1-Server.bat"
+  CreateShortcut "$SMPROGRAMS\SpeakNex\Server\SN1-Server.lnk" "$INSTDIR\SN1-Server.bat" "" "$INSTDIR\logo.png" 0
   CreateShortcut "$SMPROGRAMS\SpeakNex\Server\Documentation.lnk" "$INSTDIR\README.md"
-  CreateShortcut "$SMPROGRAMS\SpeakNex\Server\Désinstaller SpeakNex Server.lnk" "$INSTDIR\uninst.exe"
-  
-  ; Start with Windows
-  ${If} $StartWithWindows == ${BST_CHECKED}
-    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "SpeakNexServer" "$INSTDIR\SN1-Server.bat"
-  ${EndIf}
-  
+  CreateShortcut "$SMPROGRAMS\SpeakNex\Server\Desinstaller.lnk" "$INSTDIR\uninst.exe"
+  CreateShortcut "$DESKTOP\SN1-Server.lnk" "$INSTDIR\SN1-Server.bat" "" "$INSTDIR\logo.png" 0
+
   ; Uninstaller
   WriteUninstaller "$INSTDIR\uninst.exe"
-  
+
   ; Registry
   WriteRegStr HKLM "Software\SpeakNex\Server" "InstallDir" "$INSTDIR"
   WriteRegStr HKLM "Software\SpeakNex\Server" "Version" "26.0"
+  WriteRegStr HKLM "Software\SpeakNex\Server" "Port" $0
+
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\SpeakNexServer" "DisplayName" "SN1-Server - SpeakNex Server"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\SpeakNexServer" "DisplayVersion" "26.0"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\SpeakNexServer" "Publisher" "SpeakNex"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\SpeakNexServer" "InstallLocation" "$INSTDIR"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\SpeakNexServer" "DisplayIcon" "$INSTDIR\logo.png"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\SpeakNexServer" "UninstallString" "$INSTDIR\uninst.exe"
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\SpeakNexServer" "NoModify" 1
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\SpeakNexServer" "NoRepair" 1
 SectionEnd
 
-Section "Documentation" SecDocumentation
-  SetOutPath "$INSTDIR"
-  File "README.md"
+Section "Service Windows (demarrage automatique)" SecService
+  DetailPrint "Installation du service SpeakNexServer..."
+  ; service.js utilise node-windows pour creer un vrai service Windows
+  nsExec::ExecToLog 'cmd /c cd /d "$INSTDIR" && node service.js install'
+  Pop $0
+  ${If} $0 == 0
+    DetailPrint "Service installe avec succes."
+    nsExec::ExecToLog 'cmd /c cd /d "$INSTDIR" && node service.js start'
+    Pop $0
+    ${If} $0 == 0
+      DetailPrint "Service demarre."
+    ${Else}
+      DetailPrint "Service cree mais non demarre (code $0)."
+    ${EndIf}
+  ${Else}
+    DetailPrint "Impossible d'installer le service (code $0)."
+    DetailPrint "Vous pouvez toujours lancer le serveur avec SN1-Server.bat"
+  ${EndIf}
+SectionEnd
+
+Section "Demarrer le serveur maintenant" SecRunNow
+  DetailPrint "Demarrage du serveur..."
+  Exec 'cmd /c start "" "$INSTDIR\SN1-Server.bat"'
 SectionEnd
 
 ; ============================================================
-; Uninstall
+; Write configuration
+; ============================================================
+
+Function WriteConfig
+  FileOpen $1 "$INSTDIR\data\config.json" w
+  FileWrite $1 "{$\r$\n"
+  FileWrite $1 '  "port": '
+  FileWrite $1 $0
+  FileWrite $1 ",$\r$\n"
+  FileWrite $1 '  "serverName": "SpeakNex Server",$\r$\n'
+  FileWrite $1 '  "maxClients": 50$\r$\n'
+  FileWrite $1 "}$\r$\n"
+  FileClose $1
+FunctionEnd
+
+; ============================================================
+; Desinstallation
 ; ============================================================
 
 Section "Uninstall"
-  ; Stop server if running
-  nsExec::Exec "taskkill /F /IM node.exe"
-  
-  ; Remove Start with Windows
-  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "SpeakNexServer"
-  
-  ; Remove shortcuts
+  ; Stop and remove service
+  DetailPrint "Arret du service..."
+  nsExec::ExecToLog 'cmd /c cd /d "$INSTDIR" && node service.js uninstall'
+  Pop $0
+  nsExec::ExecToLog 'sc.exe stop SpeakNexServer'
+  Pop $0
+
+  ; Shortcuts
   Delete "$DESKTOP\SN1-Server.lnk"
   Delete "$SMPROGRAMS\SpeakNex\Server\SN1-Server.lnk"
   Delete "$SMPROGRAMS\SpeakNex\Server\Documentation.lnk"
-  Delete "$SMPROGRAMS\SpeakNex\Server\Désinstaller SpeakNex Server.lnk"
+  Delete "$SMPROGRAMS\SpeakNex\Server\Desinstaller.lnk"
   RMDir "$SMPROGRAMS\SpeakNex\Server"
   RMDir "$SMPROGRAMS\SpeakNex"
-  
-  ; Ask about keeping data
-  MessageBox MB_YESNO "Voulez-vous conserver les données du serveur (configuration, clés de privilèges) ?" IDYES keepData
-  
-  ; Remove everything
+
+  ; Keep data ?
+  MessageBox MB_YESNO "Voulez-vous conserver les donnees du serveur (configuration, cles de privileges) ?" IDYES keepdata
+
   RMDir /r "$INSTDIR"
-  Goto done
-  
-  keepData:
-  ; Move data folder to desktop
-  IfFileExists "$INSTDIR\data\*.*" 0 done
+  Goto regclean
+
+keepdata:
   CreateDirectory "$DESKTOP\SpeakNex-Server-Data"
   CopyFiles "$INSTDIR\data\*.*" "$DESKTOP\SpeakNex-Server-Data\"
   RMDir /r "$INSTDIR"
-  
-  done:
-  ; Remove registry
+
+regclean:
   DeleteRegKey HKLM "Software\SpeakNex\Server"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\SpeakNexServer"
 SectionEnd

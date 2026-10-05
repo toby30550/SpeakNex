@@ -29,7 +29,7 @@ async function build() {
   
   // Copy server files
   console.log('Copying server files...');
-  const serverFiles = ['server.js', 'package.json'];
+  const serverFiles = ['server.js', 'package.json', 'service.js', 'SN1-Server.js', 'SN1-Server.bat', 'README.md'];
   for (const file of serverFiles) {
     const src = path.join(__dirname, '..', 'server', file);
     const dest = path.join(SERVER_DIST, file);
@@ -99,12 +99,104 @@ Appuyez sur Ctrl+C pour arrêter le serveur.
   if (fs.existsSync(logoSrc)) {
     fs.copyFileSync(logoSrc, path.join(SERVER_DIST, 'logo.png'));
   }
-  
+
+  // Copy NSIS assets (icon + license)
+  const icoSrc = path.join(__dirname, '..', 'logo.ico');
+  if (fs.existsSync(icoSrc)) {
+    fs.copyFileSync(icoSrc, path.join(SERVER_DIST, 'logo.ico'));
+  }
+  const licenseSrc = path.join(__dirname, '..', 'LICENSE');
+  if (fs.existsSync(licenseSrc)) {
+    fs.copyFileSync(licenseSrc, path.join(SERVER_DIST, 'license.txt'));
+  }
+
   // Create NSIS installer script
   createServerInstallerScript();
-  
+
   console.log('\n=== Server build complete ===');
   console.log(`Output: ${SERVER_DIST}`);
+
+  // Compile NSIS installer if makensis is available
+  buildServerInstaller();
+}
+
+function buildServerInstaller() {
+  const makensis = findMakensis();
+  if (!makensis) {
+    console.log('\nWARNING: makensis not found, skipping SN1-Server-Setup.exe');
+    console.log('Install NSIS to build the Windows server installer.');
+    return null;
+  }
+
+  const nsiPath = path.join(SERVER_DIST, 'installer.nsi');
+  if (!fs.existsSync(nsiPath)) {
+    console.log('\nWARNING: installer.nsi not found');
+    return null;
+  }
+
+  console.log(`\nCompiling SN1-Server-Setup.exe with ${makensis}...`);
+
+  try {
+    execSync(`"${makensis}" "${nsiPath}"`, { stdio: 'inherit', cwd: SERVER_DIST });
+  } catch (err) {
+    console.error('NSIS compilation failed:', err.message);
+    return null;
+  }
+
+  // NSIS writes the output relative to the .nsi location
+  const builtExe = path.join(SERVER_DIST, 'SN1-Server-Setup.exe');
+  const outExe = path.join(DIST_DIR, 'SN1-Server-Setup.exe');
+
+  if (!fs.existsSync(builtExe)) {
+    console.error('ERROR: SN1-Server-Setup.exe was not created');
+    return null;
+  }
+
+  // Move it next to the other release artifacts
+  if (fs.existsSync(outExe)) fs.rmSync(outExe);
+  fs.renameSync(builtExe, outExe);
+
+  const size = fs.statSync(outExe).size;
+  console.log(`Server installer created: ${outExe} (${formatBytes(size)})`);
+  return outExe;
+}
+
+function findMakensis() {
+  const candidates = [];
+  const cacheBase = path.join(
+    process.env.LOCALAPPDATA || '',
+    'electron-builder',
+    'Cache',
+    'nsis'
+  );
+
+  if (fs.existsSync(cacheBase)) {
+    for (const entry of fs.readdirSync(cacheBase)) {
+      candidates.push(path.join(cacheBase, entry, 'Bin', 'makensis.exe'));
+    }
+  }
+
+  candidates.push('makensis.exe');
+  candidates.push('makensis');
+
+  for (const c of candidates) {
+    try {
+      execSync(`"${c}" /VERSION`, { stdio: 'pipe' });
+      return c;
+    } catch (e) {
+      // not found / not runnable
+    }
+  }
+
+  return null;
+}
+
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 function copyDirectoryRecursive(src, dest) {
@@ -132,57 +224,16 @@ function copyDirectoryRecursive(src, dest) {
 }
 
 function createServerInstallerScript() {
-  const installerScript = `; SpeakNex Server Installer
-; Generated NSIS script for SN1-Server
+  // Use the maintained NSIS script from server/installer.nsi
+  const src = path.join(__dirname, '..', 'server', 'installer.nsi');
+  const dest = path.join(SERVER_DIST, 'installer.nsi');
 
-!include MUI2.nsh
-
-Name "SN1-Server"
-OutFile "..\\SN1-Server-Setup.exe"
-InstallDir $PROGRAMFILES\\SpeakNex\\Server
-RequestExecutionLevel admin
-
-!insertmacro MUI_PAGE_DIRECTORY
-!insertmacro MUI_PAGE_INSTFILES
-
-!insertmacro MUI_UNPAGE_CONFIRM
-!insertmacro MUI_UNPAGE_INSTFILES
-
-!insertmacro MUI_LANGUAGE "French"
-!insertmacro MUI_LANGUAGE "English"
-
-Section "Install"
-  SetOutPath $INSTDIR
-  
-  ; Copy all files
-  File /r "*.*)"
-  
-  ; Create shortcuts
-  CreateDirectory "$SMPROGRAMS\\SpeakNex"
-  CreateShortCut "$SMPROGRAMS\\SpeakNex\\SN1-Server.lnk" "$INSTDIR\\SN1-Server.bat"
-  CreateShortCut "$SMPROGRAMS\\SpeakNex\\Désinstaller.lnk" "$INSTDIR\\uninst.exe"
-  
-  ; Desktop shortcut
-  CreateShortCut "$DESKTOP\\SN1-Server.lnk" "$INSTDIR\\SN1-Server.bat"
-  
-  ; Uninstaller
-  WriteUninstaller "$INSTDIR\\uninst.exe"
-  
-  ; Registry
-  WriteRegStr HKLM "Software\\SpeakNex\\Server" "InstallDir" "$INSTDIR"
-SectionEnd
-
-Section "Uninstall"
-  RMDir /r "$INSTDIR"
-  Delete "$SMPROGRAMS\\SpeakNex\\SN1-Server.lnk"
-  Delete "$SMPROGRAMS\\SpeakNex\\Désinstaller.lnk"
-  RMDir "$SMPROGRAMS\\SpeakNex"
-  Delete "$DESKTOP\\SN1-Server.lnk"
-  DeleteRegKey HKLM "Software\\SpeakNex\\Server"
-SectionEnd
-`;
-  
-  fs.writeFileSync(path.join(SERVER_DIST, 'installer.nsi'), installerScript);
+  if (fs.existsSync(src)) {
+    fs.copyFileSync(src, dest);
+    console.log('Copied server/installer.nsi');
+  } else {
+    console.warn('WARNING: server/installer.nsi not found, no installer will be built');
+  }
 }
 
 // Run

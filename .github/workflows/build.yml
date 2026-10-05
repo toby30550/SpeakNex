@@ -6,99 +6,189 @@ on:
       - 'v*'
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Version number'
-        required: true
-        default: '26.0'
+      publish:
+        description: 'Publish the artifacts as a GitHub Release'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
 jobs:
   build-windows:
-    name: Build Windows
+    name: Build Windows (client + server)
     runs-on: windows-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-      
+
       - name: Install dependencies
-        run: npm ci
-      
+        run: npm install --no-audit --no-fund
+
       - name: Install server dependencies
-        run: npm install --prefix server
-      
-      - name: Build Client (Windows)
+        run: npm install --omit=dev --no-audit --no-fund
+        working-directory: server
+
+      - name: Sync official logo (logo.png -> logo.ico)
+        run: node scripts/sync-logo.js
+
+      - name: Build Client installer (SN1-Setup.exe)
         run: npm run build:client:setup
-      
-      - name: Build Server (Windows)
+
+      - name: Build Server installer (SN1-Server-Setup.exe)
         run: node scripts/build-server-win.js
-      
-      - name: Upload Client artifacts
+
+      - name: Collect artifacts into dist/
+        run: node scripts/release.js --publish-only --dry-run
+
+      - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: windows-client
-          path: dist/client/*.exe
-      
-      - name: Upload Server artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-server
-          path: dist/server-win/
+          name: windows-artifacts
+          path: |
+            dist/SN1-Setup.exe
+            dist/SN1-Server-Setup.exe
+          if-no-files-found: error
 
   build-linux:
-    name: Build Linux Server
+    name: Build Linux server (SN1-Server.tar.gz)
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-      
+
       - name: Install dependencies
-        run: npm ci
-      
-      - name: Build Server (Linux)
+        run: npm install --no-audit --no-fund
+
+      - name: Build Linux server archive
         run: node scripts/build-server-linux.js
-      
-      - name: Upload Linux artifacts
+
+      - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux-server
+          name: linux-artifact
           path: dist/SN1-Server.tar.gz
+          if-no-files-found: error
 
   release:
-    name: Create GitHub Release
+    name: Publish GitHub Release
     needs: [build-windows, build-linux]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-    
+    # Publish on version tags, or on manual runs with publish=true
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.publish)
+
     steps:
-      - name: Download all artifacts
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Download Windows artifacts
         uses: actions/download-artifact@v4
-      
-      - name: Get version from tag
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-      
+        with:
+          name: windows-artifacts
+          path: dist
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-artifact
+          path: dist
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            V="${GITHUB_REF#refs/tags/v}"
+          else
+            V="$(cat VERSION)"
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: $V"
+
+      - name: Verify artifacts are real files
+        run: |
+          echo "Artifacts found:"
+          ls -la dist/
+          # Fail if any required artifact is missing or empty
+          test -s dist/SN1-Setup.exe || { echo "SN1-Setup.exe missing or empty"; exit 1; }
+          test -s dist/SN1-Server-Setup.exe || { echo "SN1-Server-Setup.exe missing or empty"; exit 1; }
+          test -s dist/SN1-Server.tar.gz || { echo "SN1-Server.tar.gz missing or empty"; exit 1; }
+          # Verify signatures
+          head -c 2 dist/SN1-Setup.exe | grep -q "MZ" || { echo "SN1-Setup.exe is not a valid PE"; exit 1; }
+          head -c 2 dist/SN1-Server-Setup.exe | grep -q "MZ" || { echo "SN1-Server-Setup.exe is not a valid PE"; exit 1; }
+          gunzip -t dist/SN1-Server.tar.gz || { echo "SN1-Server.tar.gz is not a valid gzip"; exit 1; }
+          echo "All artifacts verified."
+
       - name: Create Release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create v${{ steps.get_version.outputs.VERSION }} \
-            --title "SpeakNex ${{ steps.get_version.outputs.VERSION }}" \
-            --generate-notes \
-            windows-client/*.exe \
-            linux-server/SN1-Server.tar.gz
+          TAG="v${{ steps.version.outputs.version }}"
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Build release notes
+          node -e "
+            const fs = require('fs');
+            const art = [
+              ['SN1-Setup.exe', fs.statSync('dist/SN1-Setup.exe').size],
+              ['SN1-Server-Setup.exe', fs.statSync('dist/SN1-Server-Setup.exe').size],
+              ['SN1-Server.tar.gz', fs.statSync('dist/SN1-Server.tar.gz').size]
+            ];
+            const fmt = b => b > 1048576 ? (b/1048576).toFixed(2)+' MB' : (b/1024).toFixed(2)+' KB';
+            const rows = art.map(([n,s]) => \`| \\\`\${n}\\\` | \${fmt(s)} |\`).join('\n');
+            const notes = \`# SpeakNex \${VERSION}
+
+            Logiciel de communication vocale client/serveur.
+
+            ## Fichiers
+
+            | Fichier | Taille |
+            |---------|--------|
+            \${rows}
+
+            ## Installation
+
+            - **Client Windows** : \\\`SN1-Setup.exe\\\`
+            - **Serveur Windows** : \\\`SN1-Server-Setup.exe\\\` (installable comme service Windows)
+            - **Serveur Linux** : \\\`SN1-Server.tar.gz\\\` puis \\\`sudo ./install.sh\\\`
+
+            Port par défaut : **30000**
+            \`.replace(/^            /gm, '');
+            fs.writeFileSync('dist/RELEASE_NOTES.md', notes);
+          "
+
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "Release $TAG exists, uploading assets..."
+            gh release upload "$TAG" \
+              dist/SN1-Setup.exe \
+              dist/SN1-Server-Setup.exe \
+              dist/SN1-Server.tar.gz \
+              --clobber
+          else
+            gh release create "$TAG" \
+              --title "SpeakNex $VERSION" \
+              --notes-file dist/RELEASE_NOTES.md \
+              dist/SN1-Setup.exe \
+              dist/SN1-Server-Setup.exe \
+              dist/SN1-Server.tar.gz
+          fi
+
+          echo "Release published: https://github.com/${{ github.repository }}/releases/tag/$TAG"

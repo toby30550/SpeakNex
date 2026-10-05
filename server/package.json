@@ -5,12 +5,18 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js --dev"
+    "dev": "node server.js --dev",
+    "service:install": "node service.js install",
+    "service:uninstall": "node service.js uninstall",
+    "service:start": "node service.js start",
+    "service:stop": "node service.js stop",
+    "service:status": "node service.js status"
   },
   "dependencies": {
     "ws": "^8.16.0",
     "commander": "^12.0.0",
-    "speakeasy": "^2.0.0"
+    "speakeasy": "^2.0.0",
+    "node-windows": "^1.0.0-beta.8"
   },
   "bin": {
     "speaknex-server": "./server.js"
