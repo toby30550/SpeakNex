@@ -18,6 +18,7 @@ files:
   - privilege-key.html
   - privilege-key-renderer.js
   - renderer.js
+  - logo.png
 
 extraFiles:
   - from: ../logo.png
@@ -26,7 +27,7 @@ extraFiles:
       - logo.png
 
 win:
-  # icon: ../logo.ico  # Use logo.ico when available
+  icon: ../logo.png
   target:
     - target: nsis
       arch:
@@ -41,12 +42,12 @@ nsis:
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: SN1 - SpeakNex Client 1
-  # installerIcon: ../logo.ico  # Use when logo.ico is available
-  # uninstallerIcon: ../logo.ico
-  # installerHeaderIcon: ../logo.ico
+  installerIcon: ../logo.ico
+  uninstallerIcon: ../logo.ico
+  installerHeaderIcon: ../logo.ico
   include: installer.nsh
   license: ../LICENSE
-  artifactName: ${productName}-Setup-${version}.${ext}
+  artifactName: SN1-Setup-${version}.${ext}
 
 mac:
   icon: ../logo.png
