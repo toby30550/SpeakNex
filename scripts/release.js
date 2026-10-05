@@ -190,7 +190,8 @@ function collectArtifacts(version) {
     artifacts.push({ name: spec.name, path: found, size: stat.size });
   }
 
-  // Stage everything into dist/ root so the release upload is flat
+  // Stage everything into dist/ root under the canonical release names,
+  // so the uploaded assets are flat and consistently named.
   console.log('\nStaging artifacts into dist/ ...');
   for (const a of artifacts) {
     const dest = path.join(DIST_DIR, a.name);
@@ -198,6 +199,8 @@ function collectArtifacts(version) {
       fs.copyFileSync(a.path, dest);
       console.log(`  staged ${a.name}`);
     }
+    // Upload the staged copy so the asset keeps the canonical name
+    a.path = dest;
   }
 
   console.log(ok ? '\nAll required artifacts verified.\n' : '\nERROR: artifact verification failed.\n');
